@@ -283,7 +283,7 @@ function BottomNav() {
   <Calendar className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
   <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Agenda</span>
 </Link>
-        <Link href="/perfil" className="flex flex-col items-center py-2 space-y-1 group">
+        <Link href="/profile" className="flex flex-col items-center py-2 space-y-1 group">
   <User className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
   <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Perfil</span>
 </Link>
