@@ -1,0 +1,428 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+// Imports assumidos em um projeto Next.js/Shadcn
+// import Link from 'next/link';
+// import { Button } from '@/components/ui/button';
+// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// Adicionado Scissors ao import para uso no logo
+import { Home, Calendar, BookOpen, User, LogOut, CheckCircle, Clock, DollarSign, Target, Settings, Award, Scissors } from 'lucide-react'; 
+
+// --- Imports e Configurações de Ambiente (CORREÇÃO DE ERRO: Usando imports modulares) ---
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, doc, onSnapshot, getDoc, collection } from 'firebase/firestore';
+// --- Fim da Correção ---
+
+// Cores e classes do tema StyloHub
+const colors = {
+    background: '#141414', // Preto escuro
+    card: '#2c2c2c',       // Cinza escuro para cards
+    gold: '#FFD700',       // Dourado/Amarelo
+};
+const GOLD_GRADIENT_CLASS = 'bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900 shadow-lg shadow-yellow-500/30';
+const CARD_CLASS = 'rounded-xl border border-gray-700/50 bg-card p-4 transition-shadow duration-300 hover:shadow-xl hover:shadow-yellow-900/40';
+
+// Simulação de Componentes UI
+const Card = ({ children, className = '' }) => <div className={`${CARD_CLASS} ${className}`}>{children}</div>;
+const Button = ({ children, className = '', ...props }) => <button {...props} className={`p-3 rounded-lg font-bold transition duration-300 flex items-center justify-center ${className}`}>{children}</button>;
+const Icon = ({ children, className = '' }) => <div className={`w-8 h-8 rounded-full flex items-center justify-center ${className}`}>{children}</div>;
+// --- Fim da Simulação ---
+
+// Tipagem básica de dados
+interface UserData {
+  full_name: string;
+  role: string;
+  email: string;
+  handle: string; // Ex: @BarbeiroDoStylo
+}
+
+// Dados simulados do dia
+const MOCK_DATA = {
+  nextClient: {
+    name: 'João Silva',
+    time: '14:30',
+    service: 'Corte Degradê',
+    imageUrl: 'https://placehold.co/40x40/FFD700/000?text=JS'
+  },
+  dailyMetrics: {
+    attended: 5,
+    totalScheduled: 8,
+    estimatedEarnings: 350.00,
+  },
+  academyProgress: {
+    courseName: 'Masterclass Reflexo Caroço',
+    progressPercent: 75,
+  }
+};
+
+
+// Componente principal do Dashboard
+export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState('home'); // Para navegação mobile
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 1. Inicialização do Firebase/Supabase e Autenticação
+  useEffect(() => {
+    const setupFirebase = async () => {
+      try {
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const app = initializeApp(firebaseConfig);
+        const firestore = getFirestore(app);
+        const firebaseAuth = getAuth(app);
+        setDb(firestore);
+        setAuth(firebaseAuth);
+
+        const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+          if (user) {
+            setUserId(user.uid);
+            
+            // Simulação de fetch de dados do perfil após login
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            // Caminho privado para o documento de perfil (usando o ID do usuário como parte do caminho)
+            const profileRef = doc(firestore, `/artifacts/${appId}/users/${user.uid}/profiles`, 'registration');
+            
+            const docSnap = await getDoc(profileRef);
+            if (docSnap.exists()) {
+                const profile = docSnap.data();
+                setUserData({
+                    full_name: profile.full_name || user.email?.split('@')[0] || 'Barbeiro',
+                    role: profile.role || 'free',
+                    email: user.email || '',
+                    handle: profile.full_name ? `@${profile.full_name.replace(/\s/g, '')}DoStylo` : '@NovoBarbeiro',
+                });
+            } else {
+                // Caso não encontre o perfil (fallback)
+                setUserData({
+                    full_name: user.email?.split('@')[0] || 'Barbeiro',
+                    role: 'free',
+                    email: user.email || '',
+                    handle: `@${user.email?.split('@')[0]}` || '@NovoBarbeiro',
+                });
+            }
+          } else {
+            // Se deslogado, redirecionar para login (em um app real)
+            // router.push('/login'); 
+            setUserId(null);
+            setUserData(null);
+          }
+          setLoading(false);
+        });
+
+        // Tenta autenticar via Custom Token (ambiente Canvas)
+        if (typeof __initial_auth_token !== 'undefined') { 
+            await signInWithCustomToken(firebaseAuth, __initial_auth_token); 
+        } else if (!firebaseAuth.currentUser) {
+             await signInAnonymously(firebaseAuth); 
+        }
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("Erro de inicialização:", error);
+        setLoading(false);
+      }
+    };
+    setupFirebase();
+  }, []);
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      // Redireciona para a página inicial (em um app real)
+      window.location.href = '/'; 
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background }}>
+        <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent border-solid rounded-full animate-spin"></div>
+        <p className="text-yellow-500 ml-3">Carregando Dashboard...</p>
+      </div>
+    );
+  }
+  
+  // Componente de Métrica (Reutilizável)
+  const MetricCard = ({ title, value, icon, gradient = false }) => (
+    <Card className={`flex flex-col justify-between h-full p-4 ${gradient ? GOLD_GRADIENT_CLASS : 'text-gray-100 border-yellow-600/30'}`}>
+        <div className="flex justify-between items-start">
+            <h3 className={`text-sm font-medium ${gradient ? 'text-gray-900' : 'text-gray-400'}`}>{title}</h3>
+            {icon && React.cloneElement(icon, { className: `w-6 h-6 ${gradient ? 'text-gray-900' : 'text-yellow-500'}` })}
+        </div>
+        <p className={`text-2xl font-bold mt-2 ${gradient ? 'text-gray-900' : 'text-yellow-500'}`}>{value}</p>
+    </Card>
+  );
+
+  // ----------------------------------------------------
+  // --- Telas (Home, Agenda, Academy, Perfil) ---
+  // ----------------------------------------------------
+
+  const HomeTab = () => (
+    <div className="space-y-6">
+      
+      {/* 1. Próximo Atendimento */}
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-100">Seu Próximo Atendimento</h2>
+        <div className="flex items-center justify-between border-t border-gray-700 pt-4">
+          <div className="flex items-center space-x-3">
+            {/* Imagem de perfil do cliente */}
+            <img 
+              src={MOCK_DATA.nextClient.imageUrl} 
+              alt={MOCK_DATA.nextClient.name} 
+              className="w-12 h-12 rounded-full object-cover border-2 border-yellow-500" 
+              // Fallback para imagem de erro
+              onError={(e) => {
+                e.currentTarget.onerror = null; 
+                e.currentTarget.src = `https://placehold.co/40x40/FFD700/000?text=${MOCK_DATA.nextClient.name.charAt(0)}`
+              }}
+            />
+            <div>
+              <p className="font-semibold text-lg text-yellow-500">{MOCK_DATA.nextClient.name}</p>
+              <p className="text-sm text-gray-400">{MOCK_DATA.nextClient.time} - {MOCK_DATA.nextClient.service}</p>
+            </div>
+          </div>
+          <Button className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2">
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Marcar como Concluído
+          </Button>
+        </div>
+      </Card>
+
+      {/* 2. Seu Dia em Números */}
+      <h2 className="text-xl font-semibold mb-4 text-gray-100">Seu Dia em Números</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MetricCard 
+          title="Clientes Atendidos Hoje" 
+          value={`${MOCK_DATA.dailyMetrics.attended}/${MOCK_DATA.dailyMetrics.totalScheduled} (${(MOCK_DATA.dailyMetrics.attended / MOCK_DATA.dailyMetrics.totalScheduled * 100).toFixed(0)}%)`} 
+          icon={<Target />} 
+        />
+        <MetricCard 
+          title="Ganhos Estimados Hoje" 
+          value={`R$ ${MOCK_DATA.dailyMetrics.estimatedEarnings.toFixed(2).replace('.', ',')}`} 
+          icon={<DollarSign />} 
+          gradient 
+        />
+        <MetricCard 
+          title="Próximo Horário Livre" 
+          value="15:30" 
+          icon={<Clock />} 
+        />
+      </div>
+
+      {/* 3. Continue Evoluindo */}
+      <h2 className="text-xl font-semibold mb-4 text-gray-100">Continue Evoluindo</h2>
+      <Card className="p-6 cursor-pointer hover:border-yellow-500 transition-all">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+                <Icon className={GOLD_GRADIENT_CLASS}>
+                    <BookOpen className="w-5 h-5 text-gray-900" />
+                </Icon>
+                <div>
+                    <p className="font-semibold text-lg text-yellow-500">{MOCK_DATA.academyProgress.courseName}</p>
+                    <p className="text-sm text-gray-400">{MOCK_DATA.academyProgress.progressPercent}% Concluído</p>
+                </div>
+            </div>
+            <div className="w-24 h-2 bg-gray-700 rounded-full">
+                <div 
+                    style={{ width: `${MOCK_DATA.academyProgress.progressPercent}%` }} 
+                    className="h-full bg-yellow-500 rounded-full transition-all duration-500"
+                ></div>
+            </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const AgendaTab = () => (
+    <div className="text-center py-20">
+      <Calendar className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+      <h2 className="text-2xl font-bold text-gray-100">Agenda Profissional</h2>
+      <p className="text-gray-400 mt-2">Gerencie seus horários, adicione novos clientes e visualize a semana completa.</p>
+      <Button className={`mt-6 ${GOLD_GRADIENT_CLASS} px-6`}>
+        <Calendar className="w-4 h-4 mr-2" />
+        Abrir Agenda Completa
+      </Button>
+    </div>
+  );
+
+  const AcademyTab = () => (
+    <div className="text-center py-20">
+      <Award className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+      <h2 className="text-2xl font-bold text-gray-100">Academy StyloHub</h2>
+      <p className="text-gray-400 mt-2">Acesse Masterclasses exclusivas e certificados para elevar seu nível.</p>
+      <Button className={`mt-6 ${GOLD_GRADIENT_CLASS} px-6`}>
+        <BookOpen className="w-4 h-4 mr-2" />
+        Ver Catálogo de Cursos
+      </Button>
+    </div>
+  );
+
+  const PerfilTab = () => (
+    <div className="max-w-xl mx-auto space-y-6">
+      <h2 className="text-2xl font-bold text-gray-100 border-b border-gray-700 pb-3">Meu Perfil e Configurações</h2>
+      
+      <Card className="p-6">
+        <div className="flex items-center space-x-4">
+            <img 
+              src={`https://ui-avatars.com/api/?name=${userData?.full_name || 'Barbeiro'}&background=FFD700&color=141414&size=64&bold=true`} 
+              alt="Avatar" 
+              className="w-16 h-16 rounded-full" 
+              // Fallback simples
+              onError={(e) => {
+                e.currentTarget.onerror = null; 
+                e.currentTarget.src = `https://placehold.co/64x64/FFD700/000?text=${userData?.full_name?.charAt(0) || 'B'}`
+              }}
+            />
+            <div>
+                <p className="text-xl font-bold text-yellow-500">{userData?.full_name}</p>
+                <p className="text-gray-400">{userData?.handle}</p>
+                <p className={`text-sm mt-1 font-medium ${userData?.role === 'free' ? 'text-red-400' : 'text-green-400'}`}>Plano: {userData?.role.toUpperCase()}</p>
+            </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 space-y-2">
+        <div className="flex justify-between items-center text-gray-100 hover:text-yellow-500 cursor-pointer p-2 rounded-lg transition-colors">
+            <div className="flex items-center space-x-3">
+                <Settings className="w-5 h-5" />
+                <span>Configurações da Barbearia</span>
+            </div>
+            <span>&gt;</span>
+        </div>
+        <div className="flex justify-between items-center text-gray-100 hover:text-yellow-500 cursor-pointer p-2 rounded-lg transition-colors">
+            <div className="flex items-center space-x-3">
+                <DollarSign className="w-5 h-5" />
+                <span>Gestão Financeira e Pagamentos</span>
+            </div>
+            <span>&gt;</span>
+        </div>
+        <Button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-gray-100">
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair da Conta
+        </Button>
+      </Card>
+    </div>
+  );
+
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return <HomeTab />;
+      case 'agenda':
+        return <AgendaTab />;
+      case 'academy':
+        return <AcademyTab />;
+      case 'perfil':
+        return <PerfilTab />;
+      default:
+        return <HomeTab />;
+    }
+  };
+
+  const NavItem = ({ icon: IconComponent, label, name }) => {
+    const isActive = activeTab === name;
+    const colorClass = isActive ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-400';
+    const borderClass = isActive ? 'border-r-4 border-yellow-500' : 'border-r-4 border-transparent';
+    
+    // Versão Desktop (Sidebar)
+    return (
+      <button
+        onClick={() => setActiveTab(name)}
+        className={`hidden lg:flex items-center space-x-3 p-4 w-full text-left transition-all duration-200 ${colorClass} ${borderClass}`}
+      >
+        <IconComponent className="w-5 h-5" />
+        <span className="font-medium">{label}</span>
+      </button>
+      // Versão Mobile (Bottom Bar) é implementada no Footer
+    );
+  };
+
+  return (
+    <div style={{ backgroundColor: colors.background }} className="min-h-screen text-gray-100 font-sans flex flex-col lg:flex-row">
+
+      {/* ---------------------------------------------------- */}
+      {/* --- Sidebar (Desktop) --- */}
+      {/* ---------------------------------------------------- */}
+      <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-gray-700/50 p-4 fixed h-full">
+        
+        {/* Logo */}
+        <div className="flex items-center space-x-2 p-3 mb-6">
+          <Icon className={GOLD_GRADIENT_CLASS}>
+            <Scissors className="w-5 h-5 text-gray-900" />
+          </Icon>
+          <span className="text-2xl font-bold text-yellow-500">StyloHub</span>
+        </div>
+
+        {/* User Info */}
+        <div className="p-3 border-b border-gray-700 mb-6">
+            <p className="font-semibold text-lg text-gray-100">{userData?.full_name}</p>
+            <p className="text-sm text-yellow-500">{userData?.handle}</p>
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="flex flex-col flex-grow space-y-1">
+          <NavItem icon={Home} label="Início" name="home" />
+          <NavItem icon={Calendar} label="Agenda" name="agenda" />
+          <NavItem icon={BookOpen} label="Academy" name="academy" />
+          <NavItem icon={User} label="Perfil" name="perfil" />
+          <NavItem icon={Settings} label="Config." name="config" />
+        </nav>
+        
+        {/* Logout Button */}
+        <div className="p-3">
+          <Button onClick={handleLogout} className="w-full bg-gray-700 hover:bg-red-600 text-gray-100">
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair
+          </Button>
+        </div>
+      </aside>
+
+      {/* ---------------------------------------------------- */}
+      {/* --- Main Content --- */}
+      {/* ---------------------------------------------------- */}
+      <main className="flex-grow lg:ml-64 p-4 sm:p-8 pb-20 lg:pb-8">
+        {/* Header de Boas-Vindas (Mobile/Desktop) */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-100">
+            Bem-vindo, <span className="text-yellow-500">{userData?.full_name?.split(' ')[0] || 'Barbeiro'}!</span>
+          </h1>
+          <p className="text-gray-400 mt-1">Pronto para a lida de cortes? Seu Dashboard em tempo real.</p>
+        </header>
+
+        {renderContent()}
+      </main>
+
+      {/* ---------------------------------------------------- */}
+      {/* --- Bottom Navigation (Mobile) --- */}
+      {/* ---------------------------------------------------- */}
+      <footer className="fixed bottom-0 left-0 w-full lg:hidden bg-card border-t border-gray-700/50 z-50">
+        <div className="flex justify-around items-center h-16">
+          {[
+            { name: 'home', label: 'Home', icon: Home },
+            { name: 'academy', label: 'Academy', icon: BookOpen },
+            { name: 'agenda', label: 'Agenda', icon: Calendar },
+            { name: 'perfil', label: 'Perfil', icon: User },
+          ].map(({ name, label, icon: IconComponent }) => {
+            const isActive = activeTab === name;
+            const colorClass = isActive ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-400';
+            return (
+              <button
+                key={name}
+                onClick={() => setActiveTab(name)}
+                className={`flex flex-col items-center p-2 transition-colors ${colorClass}`}
+              >
+                <IconComponent className="w-6 h-6" />
+                <span className="text-xs mt-1">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </footer>
+    </div>
+  );
+}
