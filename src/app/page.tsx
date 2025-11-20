@@ -129,7 +129,7 @@ export default function LandingPage() {
                 Cursos
               </button>
               <button className="text-muted-foreground hover:text-gold transition-colors">
-                Entrar
+                <a href="/login">Entrar</a>
               </button>
               <Button className="gold-gradient hover:gold-gradient-hover text-background font-semibold gold-glow shimmer rounded-lg">
                 Começar Agora
@@ -701,7 +701,7 @@ export default function LandingPage() {
             <div>
               <h3 className="font-semibold mb-4 text-gold">Suporte</h3>
               <ul className="space-y-2 text-sm">
-                <li><button className="text-muted-foreground hover:text-gold transition-colors">Entrar</button></li>
+                <li><button className="text-muted-foreground hover:text-gold transition-colors"><a href="/login">Entrar</a></button></li>
                 <li><button className="text-muted-foreground hover:text-gold transition-colors">Central de Ajuda</button></li>
                 <li><button className="text-muted-foreground hover:text-gold transition-colors">Política de Privacidade</button></li>
                 <li><button className="text-muted-foreground hover:text-gold transition-colors">Termos de Uso</button></li>
