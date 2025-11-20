@@ -1,7 +1,7 @@
 'use client'
 
 import { Home, GraduationCap, Calendar, User, Star, Play, Award, CheckCircle, Clock, BookOpen, Lock, ChevronRight, TrendingUp, Users } from 'lucide-react'
-import Link from "next/link";
+
 export default function AcademyPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col relative">
@@ -395,38 +395,38 @@ export default function AcademyPage() {
 
       {/* Barra de Navegação Inferior */}
       <nav className="relative fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-gray-900 to-black border-t border-amber-500/30 backdrop-blur-xl">
-  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-  
-  <div className="grid grid-cols-4 py-3">
-    {/* Home */}
-    <Link href="/dashboard" className="flex flex-col items-center py-2 space-y-1 group">
-      <Home className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
-      <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Home</span>
-    </Link>
-    
-    {/* Academy - Ativo */}
-    <Link href="/academy" className="flex flex-col items-center py-2 space-y-1 relative group">
-      <div className="relative">
-        <GraduationCap className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
-        <div className="absolute -inset-2 bg-amber-400/20 rounded-full blur-md" />
-      </div>
-      <span className="text-xs text-amber-400 font-medium">Academy</span>
-      <div className="absolute bottom-0 w-4 h-0.5 bg-amber-400 rounded-full" />
-    </Link>
-    
-    {/* Agenda */}
-    <Link href="/agenda" className="flex flex-col items-center py-2 space-y-1 group">
-      <Calendar className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
-      <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Agenda</span>
-    </Link>
-    
-    {/* Perfil */}
-    <Link href="/profile" className="flex flex-col items-center py-2 space-y-1 group">
-      <User className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
-      <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Perfil</span>
-    </Link>
-  </div>
-</nav>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+        
+        <div className="grid grid-cols-4 py-3">
+          {/* Home */}
+          <button className="flex flex-col items-center py-2 space-y-1 group">
+            <Home className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
+            <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Home</span>
+          </button>
+          
+          {/* Academy - Ativo */}
+          <button className="flex flex-col items-center py-2 space-y-1 relative group">
+            <div className="relative">
+              <GraduationCap className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <div className="absolute -inset-2 bg-amber-400/20 rounded-full blur-md" />
+            </div>
+            <span className="text-xs text-amber-400 font-medium">Academy</span>
+            <div className="absolute bottom-0 w-4 h-0.5 bg-amber-400 rounded-full" />
+          </button>
+          
+          {/* Agenda */}
+          <button className="flex flex-col items-center py-2 space-y-1 group">
+            <Calendar className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
+            <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Agenda</span>
+          </button>
+          
+          {/* Perfil */}
+          <button className="flex flex-col items-center py-2 space-y-1 group">
+            <User className="w-5 h-5 text-gray-400 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
+            <span className="text-xs text-gray-400 group-hover:text-amber-400 transition-colors">Perfil</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

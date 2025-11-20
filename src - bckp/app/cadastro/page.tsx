@@ -59,7 +59,7 @@ export default function CadastroPage() {
     password: formData.senha,
     options: {
       data: {
-        full_name: formData.nome
+        name: formData.nome
       }
     }
   });
