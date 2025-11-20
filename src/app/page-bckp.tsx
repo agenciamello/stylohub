@@ -209,9 +209,7 @@ export default function LandingPage() {
               >
                 <span className="flex items-center gap-2">
                   <Zap className="w-5 h-5" />
-                  <Link href="/cadastro" className="flex items-center gap-2">
                   Começar Gratuitamente
-                  </Link>
                 </span>
               </Button>
               <Button 
