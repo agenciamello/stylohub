@@ -610,6 +610,7 @@ export default function LandingPage() {
                 </span>
               </Button>
 		</a>
+              <a href="/login">
               <Button 
                 size="lg" 
                 variant="outline" 
@@ -620,6 +621,7 @@ export default function LandingPage() {
                   Já Tenho Conta
                 </span>
               </Button>
+              </a>
             </div>
           </div>
         </div>
