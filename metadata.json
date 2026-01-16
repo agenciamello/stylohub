@@ -1,0 +1,5 @@
+{
+  "name": "StyloHub Dashboard",
+  "description": "A comprehensive management dashboard for barbers using React, TypeScript and Tailwind CSS.",
+  "requestFramePermissions": []
+}
